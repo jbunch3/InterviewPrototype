@@ -9,7 +9,7 @@ class TestReportGenerator:
         newRequest = ReportRequest("test_standard", 1, "performance", "2022-01-01", "wind thingy", ReportType.StandardReportPdf, debug=True)
         
         newStandardReport = report_generator.StandardReportPdf()        
-        newStandardReport.process_content(financial_entity.Text(newRequest), financial_entity.Table(newRequest))
+        newStandardReport.process_content(newRequest)
         assert len(newStandardReport.table.processed_table) == 3
         
         newReport = report_generator.ReportGenerator(newRequest)
@@ -20,7 +20,7 @@ class TestReportGenerator:
     def test_simple_generator(test):
         newRequest = ReportRequest("test_simple", 1, "performance", "2022-01-01", "wind thingy", ReportType.SimpleReportPdf, debug=True)
         newSimpleReport = report_generator.SimpleReportPdf()        
-        newSimpleReport.process_content(financial_entity.Text(newRequest))
+        newSimpleReport.process_content(newRequest)
         assert len(newSimpleReport.text.processed_body) == 55
         
         newReport = report_generator.ReportGenerator(newRequest)

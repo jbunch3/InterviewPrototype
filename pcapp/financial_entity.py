@@ -1,7 +1,6 @@
 import pdb
 import abc
 import pandas as pd
-from typing import List
 from dataclasses import dataclass
 from pcapp import data_gateway
 from pcapp.report_request import ReportRequest
@@ -66,6 +65,7 @@ class Table(FinancialEntity):
                 
     def process_request(self):
         # TODO: Needs Error Handling for sure
+        
         match self.request.type:
             case "performance":
                 table = "monthly_performance"

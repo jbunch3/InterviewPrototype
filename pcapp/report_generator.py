@@ -1,16 +1,14 @@
-import pdb
 import abc
-import pandas as pd
-from typing import List
-from dataclasses import dataclass
 
 from pcapp import financial_entity
 from pcapp.report_request import ReportRequest, ReportType
+
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib.units import cm
-from reportlab.pdfgen.canvas import Canvas
+
+import pdb
 
 class ReportTemplate(metaclass=abc.ABCMeta):
     """Abstract Class / Interface for Different Report Types (Print View)"""
@@ -38,33 +36,39 @@ class StandardReportPdf(ReportTemplate):
         self.header_style = self.styles['Heading1']
         self.body_style = self.styles['Normal']
         
-    def format_document(self, request_name: str):        
+    def format_document(self, request: ReportRequest):        
    
-        document = SimpleDocTemplate(request_name)
-        Story = []
-        Title = Paragraph(self.text.processed_header, self.header_style)
-        Story.append(Title)
-        Story.append(Spacer(1,1*cm))        
+       
+   
+        document = SimpleDocTemplate(request.name)
+        story = []
+        title = Paragraph(self.text.processed_header, self.header_style)
+        story.append(title)
+        story.append(Spacer(1,1*cm))        
         
         datatable = [self.table.processed_table.columns[:,].values.astype(str).tolist()] + self.table.processed_table.values.tolist()
 
         table = Table(datatable)
-        Story.append(table)
-        Story.append(Spacer(1,1*cm))  
+        story.append(table)
+        story.append(Spacer(1,1*cm))  
         
         for t in list(self.text.processed_body):
             if t == []:
                 continue
             
             p = Paragraph(t[0], self.body_style)
-            Story.append(p)
-            Story.append(Spacer(1,0.4*cm))
+            story.append(p)
+            story.append(Spacer(1,0.4*cm))
         
-        document.build(Story)
-     
-        return document
+        if request.debug:
+            document.build(story)
+            
+        return document, story
        
-    def process_content(self, text: financial_entity.Text, table: financial_entity.Table):
+    def process_content(self, request: ReportRequest):
+        
+        text, table = financial_entity.Text(request), financial_entity.Table(request)
+        
         text.request_data()
         text.process_data()
 
@@ -83,26 +87,29 @@ class SimpleReportPdf(ReportTemplate):
         self.header_style = self.styles['Heading1']
         self.body_style = self.styles['Normal']
        
-    def format_document(self, request_name: str):        
+    def format_document(self, request: ReportRequest):        
    
-        document = SimpleDocTemplate(request_name)
-        Story = []
-        Title = Paragraph(self.text.processed_header, self.header_style)
-        Story.append(Title)
-        Story.append(Spacer(1,1*cm))
+        document = SimpleDocTemplate(request.name)
+        story = []
+        title = Paragraph(self.text.processed_header, self.header_style)
+        story.append(title)
+        story.append(Spacer(1,1*cm))
         for t in list(self.text.processed_body):
             if t == []:
                 continue
             
             p = Paragraph(t[0], self.body_style)
-            Story.append(p)
-            Story.append(Spacer(1,0.4*cm))
+            story.append(p)
+            story.append(Spacer(1,0.4*cm))
         
-        document.build(Story)
+        if request.debug:
+            document.build(story)
      
-        return document
+        return document, story
     
-    def process_content(self, text: financial_entity.Text):
+    def process_content(self, request: ReportRequest):
+        text = financial_entity.Text(request)
+        
         text.request_data()
         text.process_data()       
         self.text = text
@@ -118,15 +125,22 @@ class ReportGenerator():
         match self.request.template:
             case ReportType.SimpleReportPdf:                
                 self.report = SimpleReportPdf()                
-                self.report.process_content(financial_entity.Text(self.request))
+                self.report.process_content(self.request)
                 if ".pdf" not in self.request.name:
                     self.request.name = self.request.name+".pdf"
                                 
             case ReportType.StandardReportPdf:
                 self.report = StandardReportPdf()                
-                self.report.process_content(financial_entity.Text(self.request), financial_entity.Table(self.request))
+                self.report.process_content(self.request)
                 if ".pdf" not in self.request.name:
-                    self.request.name = self.request.name+".pdf"    
+                    self.request.name = self.request.name+".pdf"  
+                    
+            case _:
+                pdb.set_trace()
+                raise ValueError('Missing report template in request') 
         
-        self.document = self.report.format_document(self.request.name)
+        self.document, self.content = self.report.format_document(self.request)
+        
+        if self.request.debug != True:
+            self.document.build(self.content)
         
