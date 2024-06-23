@@ -18,5 +18,5 @@ class TestGateway:
     def test_load_sqllite(test):
         dataReader = data_gateway.SqlLiteConnection("test_data/test.db")
         dataReader.load_data_source()
-        data = dataReader.read_table({"Table": "monthly_performance", "StartDate": "2022-01-01", "Asset": "Wind Turbine Park"})
+        data = dataReader.read_table({"table": "monthly_performance", "startDate": "2022-01-01", "asset": "Wind Turbine Park"})
         assert data

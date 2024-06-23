@@ -1,6 +1,7 @@
 import sqlite3
 import pdb
 import abc
+from typing import List
 
 class DataGateway(metaclass=abc.ABCMeta):
     """Abstract Class / Interface for the Data Repository Design Pattersn (Financial Data Gateway)"""
@@ -31,8 +32,8 @@ class Parser(DataGateway):
     def __subclasshook__(cls, subclass):
         return (hasattr(subclass, 'parse_header') and 
                 callable(subclass.parse_header) and 
-                hasattr(subclass, 'parse_content') and 
-                callable(subclass.parse_content))
+                hasattr(subclass, 'parse_body') and 
+                callable(subclass.parse_body))
 
     @abc.abstractmethod
     def parse_header(self) -> str:
@@ -40,7 +41,7 @@ class Parser(DataGateway):
         pass
     
     @abc.abstractmethod
-    def parse_content(self) -> str:
+    def parse_body(self) -> List[str]:
         """Parser Method"""
         pass
 
@@ -48,16 +49,16 @@ class SQLLiteRequest():
     def __init__(self, config: dict):
         if self.validate_request(config):
             self.is_valid = True
-            self.table = config['Table']
-            self.start_date = config['StartDate']
-            self.Asset = config['Asset']        
+            self.table = config['table']
+            self.start_date = config['startDate']
+            self.Asset = config['asset']        
     
     @staticmethod
     def validate_request(config: dict) -> bool:
         try:
-            config['Table']
-            config['StartDate']
-            config['Asset']
+            config['table']
+            config['startDate']
+            config['asset']
             return True
         except:
             return False        
@@ -96,7 +97,6 @@ class SqlLiteConnection(Connection):
             
         return {}
                   
-    
 class TextFileParser(Parser):
     def __init__(self, datasource):
         self.config = datasource # "data/text_file.txt"
@@ -108,17 +108,15 @@ class TextFileParser(Parser):
         with open(self.config, 'r') as file:
             paragraph = []
             lines = file.readlines()
-            
             p = 1
             for line in lines:
-                line = line.strip()
                 # Create Dictionary of Paragraphs with Header Separated to find it easier later on
                 if p == 1:
-                    self.text['Header'] = line
+                    self.text['header'] = line.strip()
                     p = p+1
                     continue                    
-                if line != "":
-                    paragraph.append(line)
+                elif line != '\n':
+                    paragraph.append(line.strip())
                     continue
                 else:
                     self.text[p] = paragraph
@@ -126,7 +124,7 @@ class TextFileParser(Parser):
                     paragraph = []
 
     def parse_header(self) -> str:
-        return self.text['Header']
+        return self.text['header']
         
-    def parse_content(self) -> str:
-        return ""
+    def parse_body(self) -> List[str]:
+        return [value for key, value in self.text.items() if key not in ['header', '']]
