@@ -4,7 +4,7 @@ import pandas as pd
 from typing import List
 from dataclasses import dataclass
 from pcapp import data_gateway
-from pcapp import report_generator
+from pcapp.report_request import ReportRequest
 import re
 
 # this ought to be done with proper database normalization and more robust checks, but for quick implemenation Im doing it here
@@ -21,7 +21,8 @@ ASSET_MAPPING = {
 }
 
 class FinancialEntity(metaclass=abc.ABCMeta):
-    """Abstract Class / Interface for Financial Entity (Financial Entity)"""
+    """Abstract Class / Interface for Financial Entity (Financial Entity + Financial Data Mapper)"""
+    """Contains Client / Audience specific logic to adjust requests and select the correct data source"""
     @classmethod
     def __subclasshook__(cls, subclass):
         return (hasattr(subclass, 'process_data') and 
@@ -39,7 +40,7 @@ class FinancialEntity(metaclass=abc.ABCMeta):
     
 @dataclass
 class Table(FinancialEntity):
-    request: report_generator.ReportRequest
+    request: ReportRequest
 
     def request_data(self):
         # Simple logic to determin data source, for large application would be extracted elsewhere
@@ -49,7 +50,7 @@ class Table(FinancialEntity):
             self.datasource = "data/prod.db"
         
         if self.request.debug == True:
-            self.datasource = "test_data/test.db"
+            self.datasource = "tests/test_data/test.db"
         
         dataReader = data_gateway.SqlLiteConnection(self.datasource)
         dataReader.load_data_source()
@@ -57,8 +58,12 @@ class Table(FinancialEntity):
         self.imported_table = dataReader.read_table(self.processed_request)
        
     def process_data(self):        
-        self.processed_table = pd.DataFrame(self.imported_table)   
-        
+        # Could add more client specific logic here
+        self.processed_table = pd.DataFrame(self.imported_table)
+        self.processed_table.drop(columns=['id', 'date_uploaded'])
+        self.processed_table = self.processed_table[[ "asset_name", "start_date", "end_date", "performance", "asset_weight"]]
+        self.processed_table.columns = ['Asset Name', 'Start Date', 'End Date', 'Performance', 'Asset Weight']
+                
     def process_request(self):
         # TODO: Needs Error Handling for sure
         match self.request.type:
@@ -76,7 +81,7 @@ class Table(FinancialEntity):
 
 @dataclass
 class Text(FinancialEntity):
-    request: report_generator.ReportRequest
+    request: ReportRequest
     
     def request_data(self):
         # Simple logic to determin data source, for large application would be extracted elsewhere
@@ -86,7 +91,7 @@ class Text(FinancialEntity):
             self.datasource = "data/text_file.txt"
         
         if self.request.debug == True:
-            self.datasource = "test_data/test_file.txt"
+            self.datasource = "tests/test_data/test_file.txt"
         
         # I imagine a more real life scenario is pullint this document from a mongo db or web scraping source
         self.imported_text = data_gateway.TextFileParser(self.datasource)

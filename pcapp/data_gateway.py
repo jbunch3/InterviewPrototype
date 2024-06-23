@@ -16,7 +16,7 @@ class DataGateway(metaclass=abc.ABCMeta):
         raise NotImplementedError
 
 class Connection(DataGateway):
-    """Abstract Class for the Connection Class Gateway Objects (Financial Database + Financial Data Mapper)"""
+    """Abstract Class for the Connection Class Gateway Objects (Financial Database)"""
     @classmethod
     def __subclasshook__(cls, subclass):
         return (hasattr(subclass, 'read_table') and 
@@ -27,7 +27,7 @@ class Connection(DataGateway):
         pass
 
 class Parser(DataGateway):
-    """Abstract Class for the Parser Class Gateway Objects (Financial Database + Financial Data Mapper)"""
+    """Abstract Class for the Parser Class Gateway Objects (Financial Database)"""
     @classmethod
     def __subclasshook__(cls, subclass):
         return (hasattr(subclass, 'parse_header') and 
