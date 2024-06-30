@@ -14,6 +14,7 @@ ASSET_MAPPING = {
         "wind turbine park": "Wind Turbine Park",
         "wind thingy": "Wind Turbine Park",
         "solar park": "Solar Park",
+        "sun": "Solar Park",
         "sun energy": "Solar Park",
         "double flipped twistable reverse note": "Arcane Structured Product",
         "fi derivatives": "Arcane Structured Product",
