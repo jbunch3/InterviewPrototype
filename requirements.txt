@@ -1,0 +1,5 @@
+Flask==3.0.3
+hypothesis==6.104.2
+pandas==2.2.2
+pytest==8.2.2
+reportlab==4.2.0
