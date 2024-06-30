@@ -17,3 +17,10 @@ Send a Request that looks something like this:
 
 `curl -XGET -H "Content-type: application/json" -d '{"request_name": "Monthly Report", "client": "1", "report_template": "standard", "report_metric": "performance", "asset_restrictons": "wind", "start": "2022-01-01"}' 'http://127.0.0.1:5000/reportgenerator'`
 
+Request Option
+* request_name: any string
+* client: 1
+* report_template: standard or simple
+* report_metric: performance
+* asset_restrictons: wind, solar
+* start: date in iso format
