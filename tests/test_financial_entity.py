@@ -4,6 +4,10 @@ from pcapp import financial_entity
 from pcapp import report_generator
 from pcapp.report_request import ReportRequest, ReportType
 
+from hypothesis import given, assume, example,settings, HealthCheck
+from hypothesis import strategies as st
+from unittest import TestCase
+
 class TestFinancialEntity:
     def test_types(test):
         newRequest = ReportRequest("Test.pdf", 1, "performance", "2022-01-01", "wind thingy",  ReportType.StandardReportPdf, True)
@@ -39,3 +43,16 @@ class TestFinancialEntity:
         newText.process_data()
         assert newText.processed_header == "Why Americans aren’t buying more EVs"
         assert len(newText.processed_body) == 55
+        
+                
+class TestFuzzRequest(TestCase):
+    @given(type=st.text())
+    def test_arbitrary_report(self, type):
+        try:
+            newRequest = ReportRequest("Test.pdf", 1, type, "2022-01-01", "wind thingy",  ReportType.StandardReportPdf, True)
+            newTable = financial_entity.Table(newRequest)
+            newTable.request_data()
+        except ValueError:
+            return
+
+        

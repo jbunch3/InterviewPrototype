@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from pcapp import data_gateway
 from pcapp.report_request import ReportRequest
 import re
+import warnings
 
 # this ought to be done with proper database normalization and more robust checks, but for quick implemenation Im doing it here
 ASSET_MAPPING = {
@@ -39,9 +40,11 @@ class FinancialEntity(metaclass=abc.ABCMeta):
     
 @dataclass
 class Table(FinancialEntity):
+    """Implements Table for Financial Entities"""
     request: ReportRequest
 
     def request_data(self):
+        """Requests data from the given data source"""
         # Simple logic to determin data source, for large application would be extracted elsewhere
         if self.request.client == 1:
             self.datasource = "data/prod.db"
@@ -56,31 +59,38 @@ class Table(FinancialEntity):
         self.process_request()
         self.imported_table = dataReader.read_table(self.processed_request)
        
-    def process_data(self):        
+    def process_data(self):   
+        """Processes data with client or entity specific logic"""     
         # Could add more client specific logic here
         self.processed_table = pd.DataFrame(self.imported_table)
         self.processed_table.drop(columns=['id', 'date_uploaded'])
         self.processed_table = self.processed_table[[ "asset_name", "start_date", "end_date", "performance", "asset_weight"]]
         self.processed_table.columns = ['Asset Name', 'Start Date', 'End Date', 'Performance', 'Asset Weight']
                 
-    def process_request(self):
-        # TODO: Needs Error Handling for sure
-        
-        match self.request.type:
-            case "performance":
-                table = "monthly_performance"
-            case _:
-                table = "monthly_performance"
-        
-        date = re.match("[0-9]{4}-[0-1]{1}[1-9]{1}-[0-9]{2}", self.request.start_date)
-        
-        asset = ASSET_MAPPING[self.request.restrictions.lower()]
-        
-        self.processed_request = {"table": table, "startDate": date.string, "asset": asset}
+    def process_request(self):        
+        """Cleans and validates the request based on client based logic"""
+        try:
+            match self.request.type:
+                case "performance":
+                    table = "monthly_performance"
+                case _:
+                    raise ValueError("No Matching Database Table")
+            
+            date = re.match("[0-9]{4}-[0-1]{1}[1-9]{1}-[0-9]{2}", self.request.start_date)
+            if date == None:
+                raise ValueError("Start Date in non-date format")
+            
+            asset = ASSET_MAPPING[self.request.restrictions.lower()]            
+            self.processed_request = {"table": table, "startDate": date.string, "asset": asset}
+            
+        except ValueError:
+             print("User Input incorrect")
+             raise
          
 
 @dataclass
 class Text(FinancialEntity):
+    """Implements the Text Financial Entity"""
     request: ReportRequest
     
     def request_data(self):

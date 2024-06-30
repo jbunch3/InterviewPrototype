@@ -4,6 +4,8 @@ from pcapp import financial_entity
 from pcapp import report_generator
 from pcapp.report_request import ReportRequest, ReportType
 
+
+
 class TestReportGenerator:
     def test_stanrdard_generator(test):
         newRequest = ReportRequest("test_standard", 1, "performance", "2022-01-01", "wind thingy", ReportType.StandardReportPdf, debug=True)

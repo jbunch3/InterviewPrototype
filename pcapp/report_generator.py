@@ -28,6 +28,7 @@ class ReportTemplate(metaclass=abc.ABCMeta):
         raise NotImplementedError
     
 class StandardReportPdf(ReportTemplate):
+    """Standard Report has Text and a Table"""
     def __init__(self):
         self.page_size = A4
         self.styles = getSampleStyleSheet()
@@ -36,10 +37,8 @@ class StandardReportPdf(ReportTemplate):
         self.header_style = self.styles['Heading1']
         self.body_style = self.styles['Normal']
         
-    def format_document(self, request: ReportRequest):        
-   
-       
-   
+    def format_document(self, request: ReportRequest):    
+        """Standard Report Formatting"""
         document = SimpleDocTemplate(request.name)
         story = []
         title = Paragraph(self.text.processed_header, self.header_style)
@@ -66,13 +65,16 @@ class StandardReportPdf(ReportTemplate):
         return document, story
        
     def process_content(self, request: ReportRequest):
-        
+        """Get necessary content for standard report"""
         text, table = financial_entity.Text(request), financial_entity.Table(request)
         
         text.request_data()
         text.process_data()
 
-        table.request_data()
+        try:
+            table.request_data()
+        except Exception: 
+            raise        
         table.process_data()
         
         self.text = text
@@ -80,6 +82,7 @@ class StandardReportPdf(ReportTemplate):
                
 
 class SimpleReportPdf(ReportTemplate):
+    """Simple Report is Just Text"""
     def __init__(self):
         self.page_size = A4
         self.styles = getSampleStyleSheet()
@@ -88,7 +91,7 @@ class SimpleReportPdf(ReportTemplate):
         self.body_style = self.styles['Normal']
        
     def format_document(self, request: ReportRequest):        
-   
+        """Formatting for simple report"""
         document = SimpleDocTemplate(request.name)
         story = []
         title = Paragraph(self.text.processed_header, self.header_style)
@@ -108,6 +111,7 @@ class SimpleReportPdf(ReportTemplate):
         return document, story
     
     def process_content(self, request: ReportRequest):
+        """Content for Simple Report"""
         text = financial_entity.Text(request)
         
         text.request_data()
@@ -117,6 +121,7 @@ class SimpleReportPdf(ReportTemplate):
 
 
 class ReportGenerator():
+    """Class that determins the report type and handles output"""
     def __init__(self, report_request: ReportRequest):        
         self.request = report_request
                 

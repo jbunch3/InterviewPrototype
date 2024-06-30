@@ -2,6 +2,7 @@ import sqlite3
 import pdb
 import abc
 from typing import List
+import re
 
 class DataGateway(metaclass=abc.ABCMeta):
     """Abstract Class / Interface for the Data Repository Design Pattersn (Financial Data Gateway)"""
@@ -46,6 +47,7 @@ class Parser(DataGateway):
         pass
 
 class SQLLiteRequest():
+    """Class for storing the state of the SQLLight request"""
     def __init__(self, config: dict):
         if self.validate_request(config):
             self.is_valid = True
@@ -55,6 +57,7 @@ class SQLLiteRequest():
     
     @staticmethod
     def validate_request(config: dict) -> bool:
+        """Validates the request to the sql database"""
         try:
             config['table']
             config['startDate']
@@ -65,6 +68,7 @@ class SQLLiteRequest():
 
 
 class SqlLiteConnection(Connection):
+    """Implements DataGateway for the SQL Type of Connection"""
     def __init__(self, datasource):
         self.config = datasource # "data/prod.db"
 
@@ -76,6 +80,9 @@ class SqlLiteConnection(Connection):
         """Takes Request and generates sql commands - obviously here just simplified"""                
         
         try:            
+            datasource = re.match(r'(data|tests)[\/a-zA-Z0-1_-]+.db', self.config)
+            if datasource == None:
+                raise FileNotFoundError
             with self.database(self.config) as conn:
                 conn.row_factory = sqlite3.Row
                 
@@ -86,42 +93,49 @@ class SqlLiteConnection(Connection):
                 # Here over-simplified sql code generation, didn't want to over do it here
                 query = "SELECT * FROM " + read_request.table + " a WHERE a.start_date >= ? AND a.asset_name = ?"
                 return [dict(row) for row in conn.execute(query, (read_request.start_date,read_request.Asset,)).fetchall()]
-                   
-                
+
         except sqlite3.Error as e:
-            pdb.set_trace()
             print(e)
+            raise
         except ValueError as e:
-            pdb.set_trace()
             print(e)
-            
-        return {}
+            raise
+        except FileNotFoundError:
+            raise
+
                   
 class TextFileParser(Parser):
+    """Implements DataGateway for the text type of Parser"""
     def __init__(self, datasource):
         self.config = datasource # "data/text_file.txt"
         self.text = {}
 
     def load_data_source(self):
-        """Load File into Memory"""
-        # TODO pass error messages forward
-        with open(self.config, 'r') as file:
-            paragraph = []
-            lines = file.readlines()
-            p = 1
-            for line in lines:
-                # Create Dictionary of Paragraphs with Header Separated to find it easier later on
-                if p == 1:
-                    self.text['header'] = line.strip()
-                    p = p+1
-                    continue                    
-                elif line != '\n':
-                    paragraph.append(line.strip())
-                    continue
-                else:
-                    self.text[p] = paragraph
-                    p = p+1   
-                    paragraph = []
+        """Load File into Memory"""        
+        try:
+            datasource = re.match(r'(data|tests)[\/a-zA-Z0-1_-]+.txt', self.config)
+            if datasource == None:
+                raise FileNotFoundError
+            with open(self.config, 'r') as file:
+                paragraph = []
+                lines = file.readlines()
+                p = 1
+                for line in lines:
+                    # Create Dictionary of Paragraphs with Header Separated to find it easier later on
+                    if p == 1:
+                        self.text['header'] = line.strip()
+                        p = p+1
+                        continue                    
+                    elif line != '\n':
+                        paragraph.append(line.strip())
+                        continue
+                    else:
+                        self.text[p] = paragraph
+                        p = p+1   
+                        paragraph = []
+        except FileNotFoundError:
+            print("No Text Source Found - Wrong Configuration?")
+            raise
 
     def parse_header(self) -> str:
         return self.text['header']
