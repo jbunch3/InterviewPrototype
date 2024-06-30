@@ -9,7 +9,7 @@ class TestReportGenerator:
         request = '{"request_name": "Monthly Report", "client": "1", "report_template": "standard", "report_metric": "performance", "asset_restrictons": "wind", "start": "2022-01-01", "debug": "true"}'
 
         RunReport = ReportController()
-        RunReport.handle_request(request)
+        RunReport.handle_request_parse(request)
         
         assert RunReport
 
